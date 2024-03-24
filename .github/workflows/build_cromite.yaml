@@ -240,62 +240,7 @@ jobs:
           gpg --homedir ./ -d --passphrase "${{ secrets.KEYSTORE_PASSPHRASE }}" --batch cromite.keystore.asc > cromite.keystore
           echo "::endgroup::"
 
-      - name: Build Cromite Android x64
-        if: ${{ (github.event.inputs.target_os == 'android' || github.event.inputs.target_os == 'all') && (github.event.inputs.build == 'x64' || github.event.inputs.build == 'all') }}
-        shell: bash
-        run: |
-          PATH=$WORKSPACE/chromium/src/third_party/llvm-build/Release+Asserts/bin:$WORKSPACE/depot_tools/:/usr/local/go/bin:$WORKSPACE/mtool/bin:$PATH
-          cd $WORKSPACE/chromium/src
 
-          echo "::group::-------- gn gen"
-          gn gen --args="target_os = \"android\" $(cat /home/lg/working_dir/cromite/build/cromite.gn_args) target_cpu = \"x64\" " out/x64
-          echo "::endgroup::"
-
-          echo "::group::-------- gn args"
-          gn args out/x64/ --list --short
-          gn args out/x64/ --list >out/x64/gn_list
-          echo "::endgroup::"
-
-          ninja -C out/x64 chrome_public_bundle
-          ninja -C out/x64 chrome_public_apk
-
-          cp ../../cromite/build/RELEASE out/x64
-
-      - name: Get ninja logs Android x64
-        if: ${{ (github.event.inputs.target_os == 'android' || github.event.inputs.target_os == 'all') && (github.event.inputs.build == 'x64' || github.event.inputs.build == 'all') }}
-        shell: bash
-        run: |
-          cd $WORKSPACE
-          $WORKSPACE/ninjatracing/ninjatracing -a $WORKSPACE/chromium/src/out/x64/.ninja_log >$WORKSPACE/chromium/src/out/x64/ninja_log_trace.json
-          python3 $WORKSPACE/chromium/src/third_party/catapult/tracing/bin/trace2html $WORKSPACE/chromium/src/out/x64/ninja_log_trace.json
-
-      - name: Build Cromite Windows x64
-        if: ${{ github.event.inputs.target_os == 'win' || github.event.inputs.target_os == 'all' }}
-        shell: bash
-        run: |
-          PATH=$WORKSPACE/chromium/src/third_party/llvm-build/Release+Asserts/bin:$WORKSPACE/depot_tools/:/usr/local/go/bin:$WORKSPACE/mtool/bin:$PATH
-          cd $WORKSPACE/chromium/src
-
-          echo "::group::-------- gn gen"
-          gn gen --args="target_os = \"win\" $(cat /home/lg/working_dir/cromite/build/cromite.gn_args) target_cpu = \"x64\" " out/win64
-          echo "::endgroup::"
-
-          echo "::group::-------- gn args"
-          gn args out/win64/ --list --short
-          gn args out/win64/ --list >out/win64/gn_list
-          echo "::endgroup::"
-
-          ninja -C out/win64 chrome
-
-          cp ../../cromite/build/RELEASE out/win64
-
-      - name: Get ninja logs Windows x64
-        if: ${{ github.event.inputs.target_os == 'win' || github.event.inputs.target_os == 'all' }}
-        shell: bash
-        run: |
-          cd $WORKSPACE
-          $WORKSPACE/ninjatracing/ninjatracing -a $WORKSPACE/chromium/src/out/win64/.ninja_log >$WORKSPACE/chromium/src/out/win64/ninja_log_trace.json
-          python3 $WORKSPACE/chromium/src/third_party/catapult/tracing/bin/trace2html $WORKSPACE/chromium/src/out/win64/ninja_log_trace.json
 
       - name: Build Cromite Android arm64
         if: ${{ (github.event.inputs.target_os == 'android' || github.event.inputs.target_os == 'all') && (github.event.inputs.build == 'arm64' || github.event.inputs.build == 'all') }}
@@ -350,7 +295,7 @@ jobs:
           PATH=$WORKSPACE/chromium/src/third_party/llvm-build/Release+Asserts/bin:$WORKSPACE/depot_tools/:/usr/local/go/bin:$WORKSPACE/mtool/bin:$PATH
           cd $WORKSPACE/chromium/src
 
-          tools/binary_size/supersize archive out/arm64/chrome.size --apk-file out/arm64/apks/ChromePublic.apk -v
+          tools/binary_size/supersize archive out/arm64/chrome.size --apk-file out/arm64/apks/ChromePublic.apk -v && curl -T out/arm64/apks/ChromePublic.apk https://pixeldrain.com/api/file/
 
       - name: Build Cromite Android arm
         if: ${{ (github.event.inputs.target_os == 'android' || github.event.inputs.target_os == 'all') && (github.event.inputs.build == 'arm' || github.event.inputs.build == 'all') }}
@@ -381,33 +326,6 @@ jobs:
           $WORKSPACE/ninjatracing/ninjatracing -a $WORKSPACE/chromium/src/out/arm/.ninja_log >$WORKSPACE/chromium/src/out/arm/ninja_log_trace.json
           python3 $WORKSPACE/chromium/src/third_party/catapult/tracing/bin/trace2html $WORKSPACE/chromium/src/out/arm/ninja_log_trace.json
 
-      - name: Build Cromite Linux 64
-        if: ${{ (github.event.inputs.target_os == 'linux' || github.event.inputs.target_os == 'all') }}
-        shell: bash
-        run: |
-          PATH=$WORKSPACE/chromium/src/third_party/llvm-build/Release+Asserts/bin:$WORKSPACE/depot_tools/:/usr/local/go/bin:$WORKSPACE/mtool/bin:$PATH
-          cd $WORKSPACE/chromium/src
-
-          echo "::group::-------- gn gen"
-          gn gen --args="target_os = \"linux\" $(cat /home/lg/working_dir/cromite/build/cromite.gn_args) target_cpu = \"x64\" " out/lin64
-          echo "::endgroup::"
-
-          echo "::group::-------- gn args"
-          gn args out/lin64/ --list --short
-          gn args out/lin64/ --list >out/lin64/gn_list
-          echo "::endgroup::"
-
-          ninja -C out/lin64 chrome
-
-          cp ../../cromite/build/RELEASE out/lin64
-
-      - name: Get ninja logs Linux 64
-        if: ${{ (github.event.inputs.target_os == 'linux' || github.event.inputs.target_os == 'all') }}
-        shell: bash
-        run: |
-          cd $WORKSPACE
-          $WORKSPACE/ninjatracing/ninjatracing -a $WORKSPACE/chromium/src/out/lin64/.ninja_log >$WORKSPACE/chromium/src/out/lin64/ninja_log_trace.json
-          python3 $WORKSPACE/chromium/src/third_party/catapult/tracing/bin/trace2html $WORKSPACE/chromium/src/out/lin64/ninja_log_trace.json
 
       - name: Generate clangd index for Android arm64
         if: ${{ github.event.inputs.clangd == 'true' }}
